@@ -1,0 +1,17 @@
+{
+  "name": "演習問題トレーニング",
+  "short_name": "演習問題",
+  "start_url": "./index.html?v=faithful46",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#efefff",
+  "theme_color": "#138a48",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
