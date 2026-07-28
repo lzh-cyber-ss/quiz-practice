@@ -1,13 +1,24 @@
-const CACHE_NAME = "software-quiz-faithful46";
+const CACHE_NAME = "software-quiz-faithful49";
 const ASSETS = [
   "./",
-  "./index.html?v=faithful46",
-  "./styles.css?v=faithful46",
-  "./data.js?v=faithful46",
-  "./hardware-data.js?v=faithful46",
-  "./app.js?v=faithful46",
+  "./index.html?v=faithful49",
+  "./styles.css?v=faithful49",
+  "./data.js?v=faithful49",
+  "./hardware-data.js?v=faithful49",
+  "./security-data.js?v=faithful49",
+  "./moodle-security-data.js?v=faithful49",
+  "./app.js?v=faithful49",
   "./manifest.webmanifest",
-  "./icon.svg"
+  "./icon.svg",
+  "./assets/security/security-02-q03-1.png",
+  "./assets/security/security-03-q07-1.png",
+  "./assets/security/security-05-q09-1.png",
+  "./assets/security/security-07-q02-1.png",
+  "./assets/security/security-07-q04-1.png",
+  "./assets/security/security-10-q04-1.png",
+  "./assets/security/security-10-q07-1.png",
+  "./assets/security/security-16-q02-1.png",
+  "./assets/security/security-17-q01-1.png"
 ];
 
 self.addEventListener("install", (event) => {

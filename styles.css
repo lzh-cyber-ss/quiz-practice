@@ -155,13 +155,13 @@ h1 {
 
 .startActions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
 .subjectChooser {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
@@ -174,7 +174,8 @@ h1 {
 
 .subject[aria-pressed="true"],
 html[data-subject="software"] .subject[data-subject="software"],
-html[data-subject="hardware"] .subject[data-subject="hardware"] {
+html[data-subject="hardware"] .subject[data-subject="hardware"],
+html[data-subject="security"] .subject[data-subject="security"] {
   background: var(--quiz-bg);
   border-color: #9bc3ce;
   color: var(--quiz-ink);
@@ -254,6 +255,19 @@ html[data-subject="hardware"] .subject[data-subject="hardware"] {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
   padding: 16px;
+}
+
+.securityFigure {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.securityFigure img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
 }
 
 .figureTitle {
@@ -1251,6 +1265,10 @@ html[data-subject="hardware"] .subject[data-subject="hardware"] {
   }
 
   .startActions {
+    grid-template-columns: 1fr;
+  }
+
+  .subjectChooser {
     grid-template-columns: 1fr;
   }
 

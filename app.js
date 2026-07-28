@@ -10,6 +10,15 @@ const subjects = {
     pages: window.HARDWARE_QUIZ_DATA || [],
     sessionKey: "hardwareQuizSessionV5",
     wrongBankKey: "hardwareQuizWrongBankV1"
+  },
+  security: {
+    label: "セキュリティ",
+    pages: [
+      ...(window.SECURITY_QUIZ_DATA || []),
+      ...(window.MOODLE_SECURITY_QUIZ_DATA || [])
+    ],
+    sessionKey: "securityQuizSessionV2",
+    wrongBankKey: "securityQuizWrongBankV1"
   }
 };
 
@@ -51,6 +60,7 @@ const els = {
   startWrong: document.querySelector("#startWrongBtn"),
   wrongBankCount: document.querySelector("#wrongBankCount"),
   quizOnly: document.querySelectorAll(".quizOnly"),
+  start50: document.querySelector("#start50Btn"),
   subjectButtons: document.querySelectorAll(".subject")
 };
 
@@ -283,6 +293,8 @@ function renderSubjectButtons() {
   els.start52.textContent = `${total}問`;
   els.start25.disabled = total < 25;
   els.start25.textContent = total >= 25 ? "25問" : `${total}問`;
+  els.start50.disabled = total < 50;
+  els.start50.textContent = total >= 50 ? "50問" : `${total}問`;
   document.querySelector(".topbar .eyebrow").textContent = `${subjects[activeSubject].label} 演習問題`;
 }
 
@@ -580,6 +592,7 @@ els.newRound.addEventListener("click", () => {
 });
 
 els.start25.addEventListener("click", () => startRound(25));
+els.start50.addEventListener("click", () => startRound(50));
 els.start52.addEventListener("click", () => startRound(uniqueSourceIndexes.length));
 els.startWrong.addEventListener("click", startWrongRound);
 els.subjectButtons.forEach((button) => {

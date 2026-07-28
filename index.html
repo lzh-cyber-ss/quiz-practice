@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=faithful46" />
+    <link rel="stylesheet" href="./styles.css?v=faithful49" />
   </head>
   <body>
     <main class="app">
@@ -24,14 +24,16 @@
           <div>
             <p class="eyebrow">新しいラウンド</p>
             <h2>問題数を選択</h2>
-            <p>25問は現在の科目からランダムに抽出します。全問は現在の科目のすべての問題を出題します。間違えた問題は，次に正解するまで復習リストに残ります。</p>
+            <p>25問・50問は現在の科目からランダムに抽出します。全問は現在の科目のすべての問題を出題します。間違えた問題は，次に正解するまで復習リストに残ります。</p>
           </div>
           <div class="subjectChooser" aria-label="科目選択">
             <button class="subject" type="button" data-subject="software">ソフトウェア</button>
             <button class="subject" type="button" data-subject="hardware">ハードウェア</button>
+            <button class="subject" type="button" data-subject="security">セキュリティ</button>
           </div>
           <div class="startActions">
             <button id="start25Btn" type="button">25問</button>
+            <button id="start50Btn" type="button">50問</button>
             <button id="start52Btn" type="button">全問</button>
             <button id="startWrongBtn" type="button">復習 <span id="wrongBankCount">0</span>問</button>
           </div>
@@ -109,12 +111,14 @@
       </div>
     </dialog>
 
-    <script src="./data.js?v=faithful46"></script>
-    <script src="./hardware-data.js?v=faithful46"></script>
-    <script src="./app.js?v=faithful46"></script>
+    <script src="./data.js?v=faithful49"></script>
+    <script src="./hardware-data.js?v=faithful49"></script>
+    <script src="./security-data.js?v=faithful49"></script>
+    <script src="./moodle-security-data.js?v=faithful49"></script>
+    <script src="./app.js?v=faithful49"></script>
     <script>
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("./sw.js?v=faithful46").then((registration) => {
+        navigator.serviceWorker.register("./sw.js?v=faithful49").then((registration) => {
           registration.update();
         }).catch(() => {});
       }
