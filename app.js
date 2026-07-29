@@ -99,10 +99,22 @@ function shuffledOrder(length) {
   return order;
 }
 
-function questionSignature(question) {
-  return (question.text || question.hint || "")
+function normalizedQuestionPart(value) {
+  return (value || "")
+    .normalize("NFKC")
+    .replace(/^\d+[.、]\s*/u, "")
     .replace(/\s+/g, "")
-    .replace(/[，、。．.]/g, "");
+    .replace(/[，、。,.]/g, "")
+    .toLowerCase();
+}
+
+function questionSignature(question) {
+  const stem = normalizedQuestionPart(question.text || question.hint);
+  const choices = (question.choices || [])
+    .map((choice) => normalizedQuestionPart(typeof choice === "string" ? choice : choice.text))
+    .sort()
+    .join("|");
+  return `${stem}::${choices}`;
 }
 
 function uniqueQuestionIndexes() {
