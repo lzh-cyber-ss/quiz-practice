@@ -1,13 +1,13 @@
-const CACHE_NAME = "software-quiz-faithful51";
+const CACHE_NAME = "software-quiz-faithful52";
 const ASSETS = [
   "./",
-  "./index.html?v=faithful51",
-  "./styles.css?v=faithful51",
-  "./data.js?v=faithful51",
-  "./hardware-data.js?v=faithful51",
-  "./security-data.js?v=faithful51",
-  "./moodle-security-data.js?v=faithful51",
-  "./app.js?v=faithful51",
+  "./index.html?v=faithful52",
+  "./styles.css?v=faithful52",
+  "./data.js?v=faithful52",
+  "./hardware-data.js?v=faithful52",
+  "./security-data.js?v=faithful52",
+  "./moodle-security-data.js?v=faithful52",
+  "./app.js?v=faithful52",
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/security/security-02-q03-1.png",

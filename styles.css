@@ -202,13 +202,6 @@ html[data-subject="security"] .subject[data-subject="security"] {
   font-weight: 850;
 }
 
-#start52Btn {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
-#start52Btn:active:not(:disabled),
 #newRoundBtn:active:not(:disabled) {
   background: #0f713b;
 }

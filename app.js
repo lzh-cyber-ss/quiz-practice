@@ -417,7 +417,7 @@ function renderQuestion() {
     button.innerHTML = `<span class="radio"></span><span class="optionText"><b>${label}</b>${optionBody}</span><span class="check">✓</span>`;
     if (record?.choice === choice.originalKey) button.classList.add("selected");
     if (done) {
-      if (record && choice.originalKey === question.answer) button.classList.add("correct");
+      if (choice.originalKey === question.answer) button.classList.add("correct");
       if (record && record.choice === choice.originalKey && record.choice !== question.answer) button.classList.add("incorrect");
       button.disabled = true;
       button.title = "このラウンドは完了しています。回答は変更できません。";
@@ -435,7 +435,8 @@ function renderQuestion() {
     els.feedback.textContent = `選択済み：${selectedChoice?.displayKey || ""}。完了前であれば変更できます。`;
     els.feedback.className = "feedback";
   } else if (!record) {
-    els.feedback.textContent = "未回答です。";
+    const correctChoice = displayChoiceForOriginalKey(question, question.answer);
+    els.feedback.textContent = `未回答。正解：${correctChoice?.displayKey || ""} ${correctChoice?.text || ""}`;
     els.feedback.className = "feedback";
   } else if (record.choice === question.answer) {
     const correctChoice = displayChoiceForOriginalKey(question, question.answer);
