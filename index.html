@@ -1,162 +1,41 @@
 <!doctype html>
-<html lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>演習問題トレーニング</title>
-    <meta name="theme-color" content="#138a48" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="演習トレーニング" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="./icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=faithful54" />
-  </head>
-  <body>
-    <main class="app">
-      <section class="panel">
-        <header class="topbar">
-          <p class="eyebrow">ソフトウェア 演習問題</p>
-          <h1>演習問題トレーニング</h1>
-        </header>
-
-        <section id="startPanel" class="startPanel">
-          <div id="subjectStep" class="startStep">
-            <div>
-              <p class="eyebrow">ステップ 1</p>
-              <h2>科目を選択</h2>
-              <p>練習する科目を選んでください。</p>
-            </div>
-            <div class="subjectChooser" aria-label="科目選択">
-              <button class="subject" type="button" data-subject="software">ソフトウェア</button>
-              <button class="subject" type="button" data-subject="hardware">ハードウェア</button>
-              <button class="subject" type="button" data-subject="security">セキュリティ</button>
-            </div>
-          </div>
-
-          <div id="roundStep" class="startStep" hidden>
-            <div class="stepHeading">
-              <div>
-                <p id="selectedSubjectLabel" class="eyebrow"></p>
-                <h2>問題数を選択</h2>
-              </div>
-              <button id="backSubjectBtn" type="button">科目選択に戻る</button>
-            </div>
-            <p>25問・50問はランダムに抽出します。「問題」は全問を25問ずつ順番に分けた固定セットです。答えは提出後にまとめて表示します。</p>
-            <div class="roundSection">
-              <h3>ランダム</h3>
-              <div class="startActions">
-                <button id="start25Btn" type="button">25問</button>
-                <button id="start50Btn" type="button">50問</button>
-                <button id="startWrongBtn" type="button">復習 <span id="wrongBankCount">0</span>問</button>
-              </div>
-            </div>
-            <div class="roundSection">
-              <h3>固定セット</h3>
-              <div id="fixedActions" class="fixedActions"></div>
-            </div>
-          </div>
-        </section>
-
-        <div class="stats quizOnly">
-          <div>
-            <span id="doneCount">0</span>
-            <small>回答済み</small>
-          </div>
-          <div>
-            <span id="accuracy">0%</span>
-            <small>正答率</small>
-          </div>
-          <div>
-            <span id="wrongCount">0</span>
-            <small>誤答</small>
-          </div>
-        </div>
-
-        <div class="modeRow quizOnly utilityHidden">
-          <button class="mode active" type="button" data-mode="all">全問</button>
-          <button class="mode" type="button" data-mode="wrong">復習</button>
-          <button class="mode" type="button" data-mode="unanswered">未回答</button>
-        </div>
-
-        <section class="questionBox quizOnly">
-          <div class="questionHeader">
-            <span id="answerMark" class="answerMark"></span>
-            <strong id="questionNo"></strong>
-          </div>
-          <p id="paperName"></p>
-          <h2 id="questionText"></h2>
-          <p id="questionHint"></p>
-          <div id="questionFigure" class="questionFigure"></div>
-          <div id="options" class="options"></div>
-          <div id="feedback" class="feedback" aria-live="polite"></div>
-        </section>
-
-        <div class="nav quizOnly">
-          <button id="prevBtn" type="button">前の問題</button>
-          <button id="nextBtn" type="button">次の問題</button>
-        </div>
-
-        <section class="quizOnly">
-          <div class="sectionTitle">
-            <h2>問題一覧</h2>
-            <button id="resetBtn" type="button">回答を提出</button>
-          </div>
-          <div id="questionList" class="questionList"></div>
-        </section>
-
-        <section id="reviewPanel" class="reviewPanel" hidden>
-          <div class="reviewHeading">
-            <div>
-              <p class="eyebrow">提出済み</p>
-              <h2>問題と解答</h2>
-              <p id="reviewSummary" class="reviewSummary"></p>
-            </div>
-            <button id="reviewStartBtn" type="button">問題数選択に戻る</button>
-          </div>
-          <nav id="reviewNavigator" class="reviewNavigator" aria-label="小テストナビゲーション">
-            <h3>小テストナビゲーション</h3>
-            <div id="reviewNavGrid" class="reviewNavGrid"></div>
-          </nav>
-          <div id="reviewQuestions" class="reviewQuestions"></div>
-          <button id="reviewNavTopBtn" class="reviewNavTop" type="button">問題一覧</button>
-        </section>
-      </section>
-    </main>
-
-    <dialog id="resultDialog" class="resultDialog">
-      <div class="resultCard">
-        <p class="eyebrow">ラウンド完了</p>
-        <h2>結果</h2>
-        <div class="resultStats">
-          <div>
-            <span id="resultTime">0分0秒</span>
-            <small>所要時間</small>
-          </div>
-          <div>
-            <span id="resultAccuracy">0%</span>
-            <small>正答率</small>
-          </div>
-        </div>
-        <p id="resultDetail" class="resultDetail"></p>
-        <div class="resultActions">
-          <button id="closeResultBtn" type="button">問題を確認</button>
-          <button id="newRoundBtn" type="button">新しいラウンド</button>
-        </div>
-      </div>
-    </dialog>
-
-    <script src="./data.js?v=faithful54"></script>
-    <script src="./hardware-data.js?v=faithful54"></script>
-    <script src="./security-data.js?v=faithful54"></script>
-    <script src="./moodle-security-data.js?v=faithful54"></script>
-    <script src="./app.js?v=faithful54"></script>
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("./sw.js?v=faithful54").then((registration) => {
-          registration.update();
-        }).catch(() => {});
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta name="robots" content="noindex, nofollow">
+  <title>页面已停止使用</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#f4f7f8;color:#1f292e;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",sans-serif}.card{width:min(520px,100%);padding:38px 28px;border:1px solid #dce3e6;border-radius:18px;background:#fff;text-align:center;box-shadow:0 12px 36px rgba(25,42,50,.08)}.mark{width:58px;height:58px;margin:0 auto 20px;display:grid;place-items:center;border-radius:50%;background:#eef1f2;color:#66737a;font-size:30px;font-weight:800}h1{margin:0 0 14px;font-size:28px}p{margin:0;color:#68757c;font-size:17px;line-height:1.8}.done{margin-top:20px;color:#33844d;font-size:14px}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="mark">×</div>
+    <h1>此页面已停止使用</h1>
+    <p>原练习页面已经关闭，请不要继续使用或传播此链接。</p>
+    <p id="status" class="done">正在清除旧版离线缓存…</p>
+  </main>
+  <script>
+    (async () => {
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((registration) => registration.unregister()));
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+        localStorage.clear();
+        sessionStorage.clear();
+        document.getElementById('status').textContent = '旧版离线缓存已清除';
+      } catch (error) {
+        document.getElementById('status').textContent = '页面已停用';
       }
-    </script>
-  </body>
+    })();
+  </script>
+</body>
 </html>
