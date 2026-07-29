@@ -58,6 +58,13 @@ const els = {
   roundStep: document.querySelector("#roundStep"),
   selectedSubjectLabel: document.querySelector("#selectedSubjectLabel"),
   backSubject: document.querySelector("#backSubjectBtn"),
+  reviewPanel: document.querySelector("#reviewPanel"),
+  reviewSummary: document.querySelector("#reviewSummary"),
+  reviewNavigator: document.querySelector("#reviewNavigator"),
+  reviewNavGrid: document.querySelector("#reviewNavGrid"),
+  reviewNavTop: document.querySelector("#reviewNavTopBtn"),
+  reviewQuestions: document.querySelector("#reviewQuestions"),
+  reviewStart: document.querySelector("#reviewStartBtn"),
   start25: document.querySelector("#start25Btn"),
   startWrong: document.querySelector("#startWrongBtn"),
   fixedActions: document.querySelector("#fixedActions"),
@@ -109,6 +116,11 @@ function normalizedQuestionPart(value) {
     .replace(/\s+/g, "")
     .replace(/[，、。,.]/g, "")
     .toLowerCase();
+}
+
+function displayQuestionText(question) {
+  const text = question.text || `${question.hint}として，適切なものはどれか。`;
+  return text.normalize("NFKC").replace(/^\d+[.、]\s*/u, "");
 }
 
 function questionSignature(question) {
@@ -317,6 +329,7 @@ function clearSession() {
 function showStart() {
   renderSubjectButtons();
   updateWrongBankButton();
+  els.reviewPanel.hidden = true;
   els.startPanel.hidden = false;
   els.subjectStep.hidden = startStep !== "subject";
   els.roundStep.hidden = startStep !== "round";
@@ -344,6 +357,7 @@ function renderSubjectButtons() {
 }
 
 function showQuiz() {
+  els.reviewPanel.hidden = true;
   els.startPanel.hidden = true;
   document.querySelector(".topbar .eyebrow").textContent = `${subjects[activeSubject].label} 演習問題`;
   els.quizOnly.forEach((item) => {
@@ -435,7 +449,7 @@ function renderQuestion() {
   els.paperName.textContent = done
     ? `${subjects[activeSubject].label}・第${currentIndex + 1}問（完了・確認中）`
     : `${subjects[activeSubject].label}・第${currentIndex + 1}問`;
-  els.questionText.textContent = question.text || `${question.hint}として，適切なものはどれか。`;
+  els.questionText.textContent = displayQuestionText(question);
   els.questionHint.textContent = question.note || "";
   els.questionFigure.innerHTML = question.figure || "";
   els.questionFigure.hidden = !question.figure;
@@ -528,6 +542,107 @@ function renderList() {
     });
     els.list.appendChild(button);
   });
+}
+
+function reviewStatus(question) {
+  const record = session.answers[question.id];
+  if (!record) return { key: "unanswered", label: "未回答" };
+  if (record.choice === question.answer) return { key: "correct", label: "正解" };
+  return { key: "wrong", label: "不正解" };
+}
+
+function renderReview() {
+  if (!session || !isFinished()) return;
+  const stats = currentStats();
+  const unanswered = stats.total - stats.done;
+  els.startPanel.hidden = true;
+  els.quizOnly.forEach((item) => {
+    item.hidden = true;
+  });
+  els.reviewPanel.hidden = false;
+  document.querySelector(".topbar .eyebrow").textContent = `${subjects[activeSubject].label} 演習問題`;
+  els.reviewSummary.textContent =
+    `全${stats.total}問・正解${stats.correct}問・不正解${stats.wrong}問・未回答${unanswered}問`;
+  els.reviewNavGrid.innerHTML = "";
+  els.reviewQuestions.innerHTML = "";
+
+  flatQuestions.forEach((question, index) => {
+    const record = session.answers[question.id];
+    const status = reviewStatus(question);
+    const correctChoice = displayChoiceForOriginalKey(question, question.answer);
+    const selectedChoice = record ? displayChoiceForOriginalKey(question, record.choice) : null;
+    const article = document.createElement("article");
+    article.className = `reviewQuestion ${status.key}`;
+    article.id = `review-question-${index + 1}`;
+
+    const meta = document.createElement("div");
+    meta.className = "reviewQuestionMeta";
+    meta.innerHTML = `<span>問題 ${index + 1}</span><strong>${status.label}</strong>`;
+    article.appendChild(meta);
+
+    const title = document.createElement("h3");
+    title.textContent = displayQuestionText(question);
+    article.appendChild(title);
+
+    if (question.note) {
+      const note = document.createElement("p");
+      note.className = "reviewNote";
+      note.textContent = question.note;
+      article.appendChild(note);
+    }
+
+    if (question.figure) {
+      const figure = document.createElement("div");
+      figure.className = "questionFigure reviewFigure";
+      figure.innerHTML = question.figure;
+      article.appendChild(figure);
+    }
+
+    const options = document.createElement("div");
+    options.className = "reviewOptions";
+    displayChoices(question).forEach((choice) => {
+      const option = document.createElement("div");
+      option.className = "reviewOption";
+      if (choice.originalKey === question.answer) option.classList.add("correct");
+      if (record?.choice === choice.originalKey) option.classList.add("selected");
+      if (record?.choice === choice.originalKey && choice.originalKey !== question.answer) {
+        option.classList.add("incorrect");
+      }
+      option.innerHTML =
+        `<span class="reviewRadio"></span><span><b>${choice.displayKey}</b> ${choice.text}</span>` +
+        `<span class="reviewCheck">${choice.originalKey === question.answer ? "✓" : ""}</span>`;
+      options.appendChild(option);
+    });
+    article.appendChild(options);
+
+    const feedback = document.createElement("p");
+    feedback.className = `reviewFeedback ${status.key}`;
+    if (!record) {
+      feedback.textContent = `未回答　正解：${correctChoice?.displayKey || ""} ${correctChoice?.text || ""}`;
+    } else if (record.choice === question.answer) {
+      feedback.textContent = `あなたの回答：${selectedChoice?.displayKey || ""} ${selectedChoice?.text || ""}（正解）`;
+    } else {
+      feedback.textContent =
+        `あなたの回答：${selectedChoice?.displayKey || ""} ${selectedChoice?.text || ""}　` +
+        `正解：${correctChoice?.displayKey || ""} ${correctChoice?.text || ""}`;
+    }
+    article.appendChild(feedback);
+    els.reviewQuestions.appendChild(article);
+
+    const jump = document.createElement("button");
+    jump.type = "button";
+    jump.className = `reviewJump ${status.key}`;
+    jump.setAttribute("aria-label", `問題${index + 1}・${status.label}`);
+    jump.innerHTML =
+      `<span>${index + 1}</span>` +
+      `<b>${status.key === "correct" ? "✓" : status.key === "wrong" ? "×" : "—"}</b>`;
+    jump.addEventListener("click", () => {
+      article.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    els.reviewNavGrid.appendChild(jump);
+  });
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function updateControls() {
@@ -640,7 +755,10 @@ els.reset.addEventListener("click", () => {
   if (confirm("開始画面に戻りますか？")) returnToStart();
 });
 
-els.closeResult.addEventListener("click", () => els.resultDialog.close());
+els.closeResult.addEventListener("click", () => {
+  els.resultDialog.close();
+  renderReview();
+});
 els.newRound.addEventListener("click", () => {
   els.resultDialog.close();
   returnToStart();
@@ -649,6 +767,10 @@ els.newRound.addEventListener("click", () => {
 els.start25.addEventListener("click", () => startRound(25));
 els.start50.addEventListener("click", () => startRound(50));
 els.startWrong.addEventListener("click", startWrongRound);
+els.reviewStart.addEventListener("click", returnToStart);
+els.reviewNavTop.addEventListener("click", () => {
+  els.reviewNavigator.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 els.backSubject.addEventListener("click", () => {
   startStep = "subject";
   showStart();
@@ -670,6 +792,7 @@ els.modes.forEach((button) => {
 document.addEventListener("keydown", (event) => {
   if (!session) return;
   if (els.resultDialog.open) return;
+  if (!els.reviewPanel.hidden) return;
   if (["ArrowRight", "j"].includes(event.key)) {
     if (!isFinished() && currentIndex === flatQuestions.length - 1) finishRound();
     else move(1);
@@ -684,4 +807,7 @@ document.addEventListener("keydown", (event) => {
 
 save();
 renderQuestion();
-if (session && isFinished()) showResult();
+if (session && isFinished()) {
+  if (session.resultShown) renderReview();
+  else showResult();
+}
