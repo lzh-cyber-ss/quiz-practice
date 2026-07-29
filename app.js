@@ -54,9 +54,13 @@ const els = {
   closeResult: document.querySelector("#closeResultBtn"),
   newRound: document.querySelector("#newRoundBtn"),
   startPanel: document.querySelector("#startPanel"),
+  subjectStep: document.querySelector("#subjectStep"),
+  roundStep: document.querySelector("#roundStep"),
+  selectedSubjectLabel: document.querySelector("#selectedSubjectLabel"),
+  backSubject: document.querySelector("#backSubjectBtn"),
   start25: document.querySelector("#start25Btn"),
-  start52: document.querySelector("#start52Btn"),
   startWrong: document.querySelector("#startWrongBtn"),
+  fixedActions: document.querySelector("#fixedActions"),
   wrongBankCount: document.querySelector("#wrongBankCount"),
   quizOnly: document.querySelectorAll(".quizOnly"),
   start50: document.querySelector("#start50Btn"),
@@ -131,11 +135,14 @@ function uniqueQuestionIndexes() {
 
 refreshSourceQuestions();
 
-function createChoiceOrders(order) {
+function createChoiceOrders(order, randomized = true) {
   return Object.fromEntries(
     order.map((sourceIndex) => {
       const question = sourceQuestions[sourceIndex];
-      return [question.id, shuffledOrder(question.choices.length)];
+      const choiceOrder = randomized
+        ? shuffledOrder(question.choices.length)
+        : question.choices.map((_, index) => index);
+      return [question.id, choiceOrder];
     })
   );
 }
@@ -173,11 +180,13 @@ function wrongBankIndexes() {
   return uniqueIndexesFromIds(loadWrongBank());
 }
 
-function createSessionFromIndexes(indexes, roundType = "normal") {
-  const order = shuffledOrder(indexes.length).map((index) => indexes[index]);
+function createSessionFromIndexes(indexes, roundType = "normal", randomized = true) {
+  const order = randomized
+    ? shuffledOrder(indexes.length).map((index) => indexes[index])
+    : [...indexes];
   return {
     order,
-    choiceOrders: createChoiceOrders(order),
+    choiceOrders: createChoiceOrders(order, randomized),
     answers: {},
     roundSize: order.length,
     roundType,
@@ -197,6 +206,26 @@ function createWrongSession() {
   const indexes = wrongBankIndexes();
   if (!indexes.length) return null;
   return createSessionFromIndexes(indexes, "wrongBank");
+}
+
+function fixedQuestionSets() {
+  const sets = [];
+  for (let start = 0; start < uniqueSourceIndexes.length; start += 25) {
+    sets.push(uniqueSourceIndexes.slice(start, start + 25));
+  }
+  return sets;
+}
+
+function renderFixedSetButtons() {
+  els.fixedActions.innerHTML = "";
+  fixedQuestionSets().forEach((indexes, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.innerHTML = `<span>問題${index + 1}</span><small>${indexes.length}問</small>`;
+    button.setAttribute("aria-label", `問題${index + 1}（${indexes.length}問）`);
+    button.addEventListener("click", () => startFixedRound(indexes, index));
+    els.fixedActions.appendChild(button);
+  });
 }
 
 function updateWrongBankButton() {
@@ -272,6 +301,7 @@ function loadSession() {
 let session = loadSession();
 let flatQuestions = session ? session.order.map((index) => sourceQuestions[index]) : [];
 let currentIndex = session ? firstUnansweredIndex() ?? 0 : 0;
+let startStep = "subject";
 
 function save() {
   if (session) localStorage.setItem(storageKey(), JSON.stringify(session));
@@ -288,6 +318,11 @@ function showStart() {
   renderSubjectButtons();
   updateWrongBankButton();
   els.startPanel.hidden = false;
+  els.subjectStep.hidden = startStep !== "subject";
+  els.roundStep.hidden = startStep !== "round";
+  els.selectedSubjectLabel.textContent = `${subjects[activeSubject].label}・ステップ 2`;
+  document.querySelector(".topbar .eyebrow").textContent =
+    startStep === "subject" ? "演習問題" : `${subjects[activeSubject].label} 演習問題`;
   els.quizOnly.forEach((item) => {
     item.hidden = true;
   });
@@ -301,16 +336,16 @@ function renderSubjectButtons() {
     button.setAttribute("aria-pressed", String(isActive));
   });
   const total = uniqueSourceIndexes.length;
-  els.start52.textContent = `${total}問`;
   els.start25.disabled = total < 25;
   els.start25.textContent = total >= 25 ? "25問" : `${total}問`;
   els.start50.disabled = total < 50;
   els.start50.textContent = total >= 50 ? "50問" : `${total}問`;
-  document.querySelector(".topbar .eyebrow").textContent = `${subjects[activeSubject].label} 演習問題`;
+  renderFixedSetButtons();
 }
 
 function showQuiz() {
   els.startPanel.hidden = true;
+  document.querySelector(".topbar .eyebrow").textContent = `${subjects[activeSubject].label} 演習問題`;
   els.quizOnly.forEach((item) => {
     item.hidden = false;
   });
@@ -551,16 +586,17 @@ function startRound(size) {
 }
 
 function setSubject(subject) {
-  if (!subjects[subject] || subject === activeSubject) return;
+  if (!subjects[subject]) return;
   activeSubject = subject;
   localStorage.setItem(subjectKey, activeSubject);
   refreshSourceQuestions();
-  session = loadSession();
-  flatQuestions = session ? session.order.map((index) => sourceQuestions[index]) : [];
-  currentIndex = session ? firstUnansweredIndex() ?? 0 : 0;
+  session = null;
+  flatQuestions = [];
+  currentIndex = 0;
+  startStep = "round";
   renderSubjectButtons();
   updateWrongBankButton();
-  renderQuestion();
+  showStart();
 }
 
 function startWrongRound() {
@@ -573,8 +609,17 @@ function startWrongRound() {
   renderQuestion();
 }
 
+function startFixedRound(indexes, index) {
+  session = createSessionFromIndexes(indexes, `fixed-${index + 1}`, false);
+  flatQuestions = session.order.map((sourceIndex) => sourceQuestions[sourceIndex]);
+  currentIndex = 0;
+  save();
+  renderQuestion();
+}
+
 function returnToStart() {
   clearSession();
+  startStep = "round";
   renderQuestion();
 }
 
@@ -603,8 +648,11 @@ els.newRound.addEventListener("click", () => {
 
 els.start25.addEventListener("click", () => startRound(25));
 els.start50.addEventListener("click", () => startRound(50));
-els.start52.addEventListener("click", () => startRound(uniqueSourceIndexes.length));
 els.startWrong.addEventListener("click", startWrongRound);
+els.backSubject.addEventListener("click", () => {
+  startStep = "subject";
+  showStart();
+});
 els.subjectButtons.forEach((button) => {
   button.addEventListener("click", () => setSubject(button.dataset.subject));
 });
