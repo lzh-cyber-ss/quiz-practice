@@ -10,7 +10,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=faithful53" />
+    <link rel="stylesheet" href="./styles.css?v=faithful54" />
   </head>
   <body>
     <main class="app">
@@ -104,6 +104,23 @@
           </div>
           <div id="questionList" class="questionList"></div>
         </section>
+
+        <section id="reviewPanel" class="reviewPanel" hidden>
+          <div class="reviewHeading">
+            <div>
+              <p class="eyebrow">提出済み</p>
+              <h2>問題と解答</h2>
+              <p id="reviewSummary" class="reviewSummary"></p>
+            </div>
+            <button id="reviewStartBtn" type="button">問題数選択に戻る</button>
+          </div>
+          <nav id="reviewNavigator" class="reviewNavigator" aria-label="小テストナビゲーション">
+            <h3>小テストナビゲーション</h3>
+            <div id="reviewNavGrid" class="reviewNavGrid"></div>
+          </nav>
+          <div id="reviewQuestions" class="reviewQuestions"></div>
+          <button id="reviewNavTopBtn" class="reviewNavTop" type="button">問題一覧</button>
+        </section>
       </section>
     </main>
 
@@ -129,14 +146,14 @@
       </div>
     </dialog>
 
-    <script src="./data.js?v=faithful53"></script>
-    <script src="./hardware-data.js?v=faithful53"></script>
-    <script src="./security-data.js?v=faithful53"></script>
-    <script src="./moodle-security-data.js?v=faithful53"></script>
-    <script src="./app.js?v=faithful53"></script>
+    <script src="./data.js?v=faithful54"></script>
+    <script src="./hardware-data.js?v=faithful54"></script>
+    <script src="./security-data.js?v=faithful54"></script>
+    <script src="./moodle-security-data.js?v=faithful54"></script>
+    <script src="./app.js?v=faithful54"></script>
     <script>
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("./sw.js?v=faithful53").then((registration) => {
+        navigator.serviceWorker.register("./sw.js?v=faithful54").then((registration) => {
           registration.update();
         }).catch(() => {});
       }
