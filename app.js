@@ -45,7 +45,6 @@ const els = {
   wrongCount: document.querySelector("#wrongCount"),
   prev: document.querySelector("#prevBtn"),
   next: document.querySelector("#nextBtn"),
-  random: document.querySelector("#randomBtn"),
   reset: document.querySelector("#resetBtn"),
   modes: document.querySelectorAll(".mode"),
   resultDialog: document.querySelector("#resultDialog"),
@@ -364,24 +363,6 @@ function firstUnansweredIndex() {
   return index >= 0 ? index : null;
 }
 
-function nextUnansweredIndex(fromIndex, direction = 1) {
-  if (!session || hasAnsweredAll()) return null;
-  for (let step = 1; step <= flatQuestions.length; step += 1) {
-    const index = (fromIndex + step * direction + flatQuestions.length) % flatQuestions.length;
-    if (!session.answers[flatQuestions[index].id]) return index;
-  }
-  return null;
-}
-
-function randomUnansweredIndex() {
-  const indexes = flatQuestions
-    .map((question, index) => ({ question, index }))
-    .filter(({ question }) => !session.answers[question.id])
-    .map(({ index }) => index);
-  if (!indexes.length) return null;
-  return indexes[Math.floor(Math.random() * indexes.length)];
-}
-
 function formatElapsed(ms) {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));
   const minutes = Math.floor(totalSeconds / 60);
@@ -435,9 +416,9 @@ function renderQuestion() {
     const optionBody = optionText === label && !compactChoice ? "" : ` ${optionText}`;
     button.innerHTML = `<span class="radio"></span><span class="optionText"><b>${label}</b>${optionBody}</span><span class="check">✓</span>`;
     if (record?.choice === choice.originalKey) button.classList.add("selected");
-    if (done && record) {
-      if (choice.originalKey === question.answer) button.classList.add("correct");
-      if (record.choice === choice.originalKey && record.choice !== question.answer) button.classList.add("incorrect");
+    if (done) {
+      if (record && choice.originalKey === question.answer) button.classList.add("correct");
+      if (record && record.choice === choice.originalKey && record.choice !== question.answer) button.classList.add("incorrect");
       button.disabled = true;
       button.title = "このラウンドは完了しています。回答は変更できません。";
     } else {
@@ -452,6 +433,9 @@ function renderQuestion() {
   } else if (!done && record) {
     const selectedChoice = displayChoiceForOriginalKey(question, record.choice);
     els.feedback.textContent = `選択済み：${selectedChoice?.displayKey || ""}。完了前であれば変更できます。`;
+    els.feedback.className = "feedback";
+  } else if (!record) {
+    els.feedback.textContent = "未回答です。";
     els.feedback.className = "feedback";
   } else if (record.choice === question.answer) {
     const correctChoice = displayChoiceForOriginalKey(question, question.answer);
@@ -478,15 +462,6 @@ function answerQuestion(choice) {
     choice: selectedChoice.originalKey,
     answeredAt: Date.now()
   };
-
-  if (hasAnsweredAll()) {
-    session.finishedAt = Date.now();
-    updateWrongBankFromSession();
-    save();
-    renderQuestion();
-    showResult();
-    return;
-  }
 
   save();
   renderQuestion();
@@ -521,15 +496,32 @@ function renderList() {
 
 function updateControls() {
   const done = isFinished();
-  els.prev.disabled = flatQuestions.length <= 1;
-  els.next.disabled = flatQuestions.length <= 1;
-  els.random.disabled = done || firstUnansweredIndex() === null;
-  els.random.textContent = done ? "完了" : "未回答からランダム";
+  const atFirst = currentIndex === 0;
+  const atLast = currentIndex === flatQuestions.length - 1;
+  els.prev.disabled = atFirst;
+  els.next.textContent = !done && atLast ? "回答を提出" : "次の問題";
+  els.next.disabled = done ? atLast : atLast && answeredCount() === 0;
+  els.reset.textContent = done ? "最初に戻る" : "回答を提出";
+  els.reset.disabled = !done && answeredCount() === 0;
 }
 
 function move(offset) {
-  currentIndex = (currentIndex + offset + flatQuestions.length) % flatQuestions.length;
+  currentIndex = Math.min(Math.max(currentIndex + offset, 0), flatQuestions.length - 1);
   renderQuestion();
+}
+
+function finishRound() {
+  if (!session || isFinished() || answeredCount() === 0) return;
+  const unanswered = flatQuestions.length - answeredCount();
+  const message = unanswered > 0
+    ? `未回答が${unanswered}問あります。回答済みの${answeredCount()}問を採点しますか？`
+    : "回答を提出して採点しますか？";
+  if (!confirm(message)) return;
+  session.finishedAt = Date.now();
+  updateWrongBankFromSession();
+  save();
+  renderQuestion();
+  showResult();
 }
 
 function showResult(force = false) {
@@ -541,7 +533,9 @@ function showResult(force = false) {
   const bankCount = wrongBankIndexes().length;
   els.resultTime.textContent = elapsed;
   els.resultAccuracy.textContent = `${stats.accuracy}%`;
-  els.resultDetail.textContent = `全${stats.total}問中，正解${stats.correct}問，不正解${stats.wrong}問。復習リストには現在${bankCount}問あります。`;
+  const unanswered = stats.total - stats.done;
+  const unansweredText = unanswered ? `未回答は${unanswered}問です。` : "";
+  els.resultDetail.textContent = `回答${stats.done}問中，正解${stats.correct}問，不正解${stats.wrong}問。${unansweredText}復習リストには現在${bankCount}問あります。`;
   els.resultDialog.showModal();
   session.resultShown = true;
   save();
@@ -584,17 +578,20 @@ function returnToStart() {
 }
 
 els.prev.addEventListener("click", () => move(-1));
-els.next.addEventListener("click", () => move(1));
-els.random.addEventListener("click", () => {
-  const index = randomUnansweredIndex();
-  if (index === null) return;
-  currentIndex = index;
-  renderQuestion();
+els.next.addEventListener("click", () => {
+  if (!isFinished() && currentIndex === flatQuestions.length - 1) {
+    finishRound();
+    return;
+  }
+  move(1);
 });
 
 els.reset.addEventListener("click", () => {
-  if (!confirm("開始画面に戻りますか？現在のラウンドの回答は削除されます。")) return;
-  returnToStart();
+  if (!isFinished()) {
+    finishRound();
+    return;
+  }
+  if (confirm("開始画面に戻りますか？")) returnToStart();
 });
 
 els.closeResult.addEventListener("click", () => els.resultDialog.close());
@@ -624,7 +621,10 @@ els.modes.forEach((button) => {
 document.addEventListener("keydown", (event) => {
   if (!session) return;
   if (els.resultDialog.open) return;
-  if (["ArrowRight", "j"].includes(event.key)) move(1);
+  if (["ArrowRight", "j"].includes(event.key)) {
+    if (!isFinished() && currentIndex === flatQuestions.length - 1) finishRound();
+    else move(1);
+  }
   if (["ArrowLeft", "k"].includes(event.key)) move(-1);
   const question = flatQuestions[currentIndex];
   const normalized = event.key.toUpperCase();

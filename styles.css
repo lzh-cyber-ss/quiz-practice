@@ -35,9 +35,18 @@ button {
   padding: 0 14px;
   font: inherit;
   cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 90ms ease, background-color 120ms ease, border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 button:hover {
+  border-color: var(--accent);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+  background-color: var(--accent-soft);
   border-color: var(--accent);
 }
 
@@ -101,10 +110,15 @@ h1 {
   color: var(--muted);
 }
 
-.modeRow,
-.nav {
+.modeRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.nav {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
@@ -192,6 +206,11 @@ html[data-subject="security"] .subject[data-subject="security"] {
   background: var(--accent);
   border-color: var(--accent);
   color: white;
+}
+
+#start52Btn:active:not(:disabled),
+#newRoundBtn:active:not(:disabled) {
+  background: #0f713b;
 }
 
 #startWrongBtn:disabled {
@@ -1295,9 +1314,12 @@ html[data-subject="security"] .subject[data-subject="security"] {
     font-size: 18px;
   }
 
-  .modeRow,
-  .nav {
+  .modeRow {
     grid-template-columns: 1fr;
+  }
+
+  .nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .questionList {
