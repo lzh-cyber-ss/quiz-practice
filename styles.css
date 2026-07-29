@@ -1200,6 +1200,239 @@ html[data-subject="security"] .subject[data-subject="security"] {
   color: var(--bad);
 }
 
+.reviewPanel {
+  display: grid;
+  gap: 18px;
+}
+
+.reviewHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 24px;
+}
+
+.reviewHeading h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.reviewSummary {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.reviewQuestions {
+  display: grid;
+  gap: 18px;
+}
+
+.reviewNavigator {
+  scroll-margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 18px;
+}
+
+.reviewNavigator h3 {
+  margin: 0 0 14px;
+  font-size: 19px;
+}
+
+.reviewNavGrid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.reviewJump {
+  display: grid;
+  grid-template-rows: 1fr 18px;
+  min-width: 0;
+  min-height: 52px;
+  overflow: hidden;
+  padding: 0;
+  font-weight: 750;
+}
+
+.reviewJump span {
+  display: grid;
+  place-items: center;
+}
+
+.reviewJump b {
+  display: grid;
+  place-items: center;
+  background: var(--muted);
+  color: white;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.reviewJump.correct b {
+  background: var(--accent);
+}
+
+.reviewJump.wrong b {
+  background: var(--bad);
+}
+
+.reviewNavTop {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 10;
+  min-height: 44px;
+  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 750;
+  box-shadow: 0 8px 24px rgba(20, 28, 32, 0.16);
+}
+
+.reviewQuestion {
+  scroll-margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid #d6e7ec;
+  border-radius: 8px;
+  background: var(--quiz-bg);
+  color: var(--quiz-ink);
+  padding: 22px;
+}
+
+.reviewQuestion.correct {
+  border-left: 6px solid var(--accent);
+}
+
+.reviewQuestion.wrong {
+  border-left: 6px solid var(--bad);
+}
+
+.reviewQuestion.unanswered {
+  border-left: 6px solid var(--muted);
+}
+
+.reviewQuestionMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.reviewQuestionMeta span {
+  color: #5a7f8b;
+  font-weight: 750;
+}
+
+.reviewQuestionMeta strong {
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 5px 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.reviewQuestion.correct .reviewQuestionMeta strong {
+  color: var(--accent);
+}
+
+.reviewQuestion.wrong .reviewQuestionMeta strong {
+  color: var(--bad);
+}
+
+.reviewQuestion h3 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 550;
+  line-height: 1.6;
+}
+
+.reviewNote {
+  color: #5a7f8b;
+  line-height: 1.65;
+}
+
+.reviewFigure {
+  margin-left: 0;
+}
+
+.reviewOptions {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.reviewOption {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 24px;
+  align-items: start;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 10px;
+  line-height: 1.55;
+}
+
+.reviewOption.selected {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.reviewOption.correct {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.reviewOption.incorrect {
+  background: var(--bad-soft);
+  color: var(--ink);
+}
+
+.reviewRadio {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border: 2px solid #b7c7cc;
+  border-radius: 999px;
+}
+
+.reviewOption.selected .reviewRadio {
+  border: 6px solid var(--accent);
+}
+
+.reviewOption.incorrect .reviewRadio {
+  border-color: var(--bad);
+}
+
+.reviewCheck {
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.reviewFeedback {
+  margin: 18px 0 0;
+  border-radius: 8px;
+  background: #fff7e6;
+  padding: 14px;
+  color: #715a2f;
+  line-height: 1.65;
+}
+
+.reviewFeedback.correct {
+  color: var(--accent);
+}
+
+.reviewFeedback.wrong {
+  color: var(--bad);
+}
+
 .questionList {
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
@@ -1341,6 +1574,29 @@ html[data-subject="security"] .subject[data-subject="security"] {
   .stepHeading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .reviewHeading {
+    flex-direction: column;
+    padding: 18px;
+  }
+
+  .reviewQuestion {
+    padding: 18px 12px;
+  }
+
+  .reviewNavGrid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .reviewNavTop {
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .reviewOption {
+    grid-template-columns: 22px minmax(0, 1fr) 22px;
+    padding: 9px 6px;
   }
 
   #questionText {
