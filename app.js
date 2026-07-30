@@ -2,27 +2,18 @@ const subjects = {
   software: {
     label: "ソフトウェア",
     pages: window.QUIZ_DATA || [],
-    sessionKey: "softwareQuizSessionV24",
-    wrongBankKey: "softwareQuizWrongBankV2"
+    sessionKey: "sharedSoftwareQuizSessionV1",
+    wrongBankKey: "sharedSoftwareQuizWrongBankV1"
   },
   hardware: {
     label: "ハードウェア",
     pages: window.HARDWARE_QUIZ_DATA || [],
-    sessionKey: "hardwareQuizSessionV5",
-    wrongBankKey: "hardwareQuizWrongBankV1"
-  },
-  security: {
-    label: "セキュリティ",
-    pages: [
-      ...(window.SECURITY_QUIZ_DATA || []),
-      ...(window.MOODLE_SECURITY_QUIZ_DATA || [])
-    ],
-    sessionKey: "securityQuizSessionV2",
-    wrongBankKey: "securityQuizWrongBankV1"
+    sessionKey: "sharedHardwareQuizSessionV1",
+    wrongBankKey: "sharedHardwareQuizWrongBankV1"
   }
 };
 
-const subjectKey = "quizActiveSubjectV1";
+const subjectKey = "sharedQuizActiveSubjectV1";
 const choiceKeys = ["ア", "イ", "ウ", "エ"];
 let activeSubject = localStorage.getItem(subjectKey) || "software";
 if (!subjects[activeSubject]) activeSubject = "software";
@@ -45,6 +36,7 @@ const els = {
   wrongCount: document.querySelector("#wrongCount"),
   prev: document.querySelector("#prevBtn"),
   next: document.querySelector("#nextBtn"),
+  random: document.querySelector("#randomBtn"),
   reset: document.querySelector("#resetBtn"),
   modes: document.querySelectorAll(".mode"),
   resultDialog: document.querySelector("#resultDialog"),
@@ -54,23 +46,11 @@ const els = {
   closeResult: document.querySelector("#closeResultBtn"),
   newRound: document.querySelector("#newRoundBtn"),
   startPanel: document.querySelector("#startPanel"),
-  subjectStep: document.querySelector("#subjectStep"),
-  roundStep: document.querySelector("#roundStep"),
-  selectedSubjectLabel: document.querySelector("#selectedSubjectLabel"),
-  backSubject: document.querySelector("#backSubjectBtn"),
-  reviewPanel: document.querySelector("#reviewPanel"),
-  reviewSummary: document.querySelector("#reviewSummary"),
-  reviewNavigator: document.querySelector("#reviewNavigator"),
-  reviewNavGrid: document.querySelector("#reviewNavGrid"),
-  reviewNavTop: document.querySelector("#reviewNavTopBtn"),
-  reviewQuestions: document.querySelector("#reviewQuestions"),
-  reviewStart: document.querySelector("#reviewStartBtn"),
   start25: document.querySelector("#start25Btn"),
+  start52: document.querySelector("#start52Btn"),
   startWrong: document.querySelector("#startWrongBtn"),
-  fixedActions: document.querySelector("#fixedActions"),
   wrongBankCount: document.querySelector("#wrongBankCount"),
   quizOnly: document.querySelectorAll(".quizOnly"),
-  start50: document.querySelector("#start50Btn"),
   subjectButtons: document.querySelectorAll(".subject")
 };
 
@@ -109,27 +89,10 @@ function shuffledOrder(length) {
   return order;
 }
 
-function normalizedQuestionPart(value) {
-  return (value || "")
-    .normalize("NFKC")
-    .replace(/^\d+[.、]\s*/u, "")
-    .replace(/\s+/g, "")
-    .replace(/[，、。,.]/g, "")
-    .toLowerCase();
-}
-
-function displayQuestionText(question) {
-  const text = question.text || `${question.hint}として，適切なものはどれか。`;
-  return text.normalize("NFKC").replace(/^\d+[.、]\s*/u, "");
-}
-
 function questionSignature(question) {
-  const stem = normalizedQuestionPart(question.text || question.hint);
-  const choices = (question.choices || [])
-    .map((choice) => normalizedQuestionPart(typeof choice === "string" ? choice : choice.text))
-    .sort()
-    .join("|");
-  return `${stem}::${choices}`;
+  return (question.text || question.hint || "")
+    .replace(/\s+/g, "")
+    .replace(/[，、。．.]/g, "");
 }
 
 function uniqueQuestionIndexes() {
@@ -147,14 +110,11 @@ function uniqueQuestionIndexes() {
 
 refreshSourceQuestions();
 
-function createChoiceOrders(order, randomized = true) {
+function createChoiceOrders(order) {
   return Object.fromEntries(
     order.map((sourceIndex) => {
       const question = sourceQuestions[sourceIndex];
-      const choiceOrder = randomized
-        ? shuffledOrder(question.choices.length)
-        : question.choices.map((_, index) => index);
-      return [question.id, choiceOrder];
+      return [question.id, shuffledOrder(question.choices.length)];
     })
   );
 }
@@ -192,13 +152,11 @@ function wrongBankIndexes() {
   return uniqueIndexesFromIds(loadWrongBank());
 }
 
-function createSessionFromIndexes(indexes, roundType = "normal", randomized = true) {
-  const order = randomized
-    ? shuffledOrder(indexes.length).map((index) => indexes[index])
-    : [...indexes];
+function createSessionFromIndexes(indexes, roundType = "normal") {
+  const order = shuffledOrder(indexes.length).map((index) => indexes[index]);
   return {
     order,
-    choiceOrders: createChoiceOrders(order, randomized),
+    choiceOrders: createChoiceOrders(order),
     answers: {},
     roundSize: order.length,
     roundType,
@@ -218,26 +176,6 @@ function createWrongSession() {
   const indexes = wrongBankIndexes();
   if (!indexes.length) return null;
   return createSessionFromIndexes(indexes, "wrongBank");
-}
-
-function fixedQuestionSets() {
-  const sets = [];
-  for (let start = 0; start < uniqueSourceIndexes.length; start += 25) {
-    sets.push(uniqueSourceIndexes.slice(start, start + 25));
-  }
-  return sets;
-}
-
-function renderFixedSetButtons() {
-  els.fixedActions.innerHTML = "";
-  fixedQuestionSets().forEach((indexes, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.innerHTML = `<span>問題${index + 1}</span><small>${indexes.length}問</small>`;
-    button.setAttribute("aria-label", `問題${index + 1}（${indexes.length}問）`);
-    button.addEventListener("click", () => startFixedRound(indexes, index));
-    els.fixedActions.appendChild(button);
-  });
 }
 
 function updateWrongBankButton() {
@@ -313,7 +251,6 @@ function loadSession() {
 let session = loadSession();
 let flatQuestions = session ? session.order.map((index) => sourceQuestions[index]) : [];
 let currentIndex = session ? firstUnansweredIndex() ?? 0 : 0;
-let startStep = "subject";
 
 function save() {
   if (session) localStorage.setItem(storageKey(), JSON.stringify(session));
@@ -329,13 +266,7 @@ function clearSession() {
 function showStart() {
   renderSubjectButtons();
   updateWrongBankButton();
-  els.reviewPanel.hidden = true;
   els.startPanel.hidden = false;
-  els.subjectStep.hidden = startStep !== "subject";
-  els.roundStep.hidden = startStep !== "round";
-  els.selectedSubjectLabel.textContent = `${subjects[activeSubject].label}・ステップ 2`;
-  document.querySelector(".topbar .eyebrow").textContent =
-    startStep === "subject" ? "演習問題" : `${subjects[activeSubject].label} 演習問題`;
   els.quizOnly.forEach((item) => {
     item.hidden = true;
   });
@@ -349,17 +280,14 @@ function renderSubjectButtons() {
     button.setAttribute("aria-pressed", String(isActive));
   });
   const total = uniqueSourceIndexes.length;
+  els.start52.textContent = `${total}問`;
   els.start25.disabled = total < 25;
   els.start25.textContent = total >= 25 ? "25問" : `${total}問`;
-  els.start50.disabled = total < 50;
-  els.start50.textContent = total >= 50 ? "50問" : `${total}問`;
-  renderFixedSetButtons();
+  document.querySelector(".topbar .eyebrow").textContent = `${subjects[activeSubject].label} 演習問題`;
 }
 
 function showQuiz() {
-  els.reviewPanel.hidden = true;
   els.startPanel.hidden = true;
-  document.querySelector(".topbar .eyebrow").textContent = `${subjects[activeSubject].label} 演習問題`;
   els.quizOnly.forEach((item) => {
     item.hidden = false;
   });
@@ -412,6 +340,24 @@ function firstUnansweredIndex() {
   return index >= 0 ? index : null;
 }
 
+function nextUnansweredIndex(fromIndex, direction = 1) {
+  if (!session || hasAnsweredAll()) return null;
+  for (let step = 1; step <= flatQuestions.length; step += 1) {
+    const index = (fromIndex + step * direction + flatQuestions.length) % flatQuestions.length;
+    if (!session.answers[flatQuestions[index].id]) return index;
+  }
+  return null;
+}
+
+function randomUnansweredIndex() {
+  const indexes = flatQuestions
+    .map((question, index) => ({ question, index }))
+    .filter(({ question }) => !session.answers[question.id])
+    .map(({ index }) => index);
+  if (!indexes.length) return null;
+  return indexes[Math.floor(Math.random() * indexes.length)];
+}
+
 function formatElapsed(ms) {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));
   const minutes = Math.floor(totalSeconds / 60);
@@ -449,7 +395,7 @@ function renderQuestion() {
   els.paperName.textContent = done
     ? `${subjects[activeSubject].label}・第${currentIndex + 1}問（完了・確認中）`
     : `${subjects[activeSubject].label}・第${currentIndex + 1}問`;
-  els.questionText.textContent = displayQuestionText(question);
+  els.questionText.textContent = question.text || `${question.hint}として，適切なものはどれか。`;
   els.questionHint.textContent = question.note || "";
   els.questionFigure.innerHTML = question.figure || "";
   els.questionFigure.hidden = !question.figure;
@@ -465,9 +411,9 @@ function renderQuestion() {
     const optionBody = optionText === label && !compactChoice ? "" : ` ${optionText}`;
     button.innerHTML = `<span class="radio"></span><span class="optionText"><b>${label}</b>${optionBody}</span><span class="check">✓</span>`;
     if (record?.choice === choice.originalKey) button.classList.add("selected");
-    if (done) {
+    if (done && record) {
       if (choice.originalKey === question.answer) button.classList.add("correct");
-      if (record && record.choice === choice.originalKey && record.choice !== question.answer) button.classList.add("incorrect");
+      if (record.choice === choice.originalKey && record.choice !== question.answer) button.classList.add("incorrect");
       button.disabled = true;
       button.title = "このラウンドは完了しています。回答は変更できません。";
     } else {
@@ -482,10 +428,6 @@ function renderQuestion() {
   } else if (!done && record) {
     const selectedChoice = displayChoiceForOriginalKey(question, record.choice);
     els.feedback.textContent = `選択済み：${selectedChoice?.displayKey || ""}。完了前であれば変更できます。`;
-    els.feedback.className = "feedback";
-  } else if (!record) {
-    const correctChoice = displayChoiceForOriginalKey(question, question.answer);
-    els.feedback.textContent = `未回答。正解：${correctChoice?.displayKey || ""} ${correctChoice?.text || ""}`;
     els.feedback.className = "feedback";
   } else if (record.choice === question.answer) {
     const correctChoice = displayChoiceForOriginalKey(question, question.answer);
@@ -512,6 +454,15 @@ function answerQuestion(choice) {
     choice: selectedChoice.originalKey,
     answeredAt: Date.now()
   };
+
+  if (hasAnsweredAll()) {
+    session.finishedAt = Date.now();
+    updateWrongBankFromSession();
+    save();
+    renderQuestion();
+    showResult();
+    return;
+  }
 
   save();
   renderQuestion();
@@ -544,135 +495,17 @@ function renderList() {
   });
 }
 
-function reviewStatus(question) {
-  const record = session.answers[question.id];
-  if (!record) return { key: "unanswered", label: "未回答" };
-  if (record.choice === question.answer) return { key: "correct", label: "正解" };
-  return { key: "wrong", label: "不正解" };
-}
-
-function renderReview() {
-  if (!session || !isFinished()) return;
-  const stats = currentStats();
-  const unanswered = stats.total - stats.done;
-  els.startPanel.hidden = true;
-  els.quizOnly.forEach((item) => {
-    item.hidden = true;
-  });
-  els.reviewPanel.hidden = false;
-  document.querySelector(".topbar .eyebrow").textContent = `${subjects[activeSubject].label} 演習問題`;
-  els.reviewSummary.textContent =
-    `全${stats.total}問・正解${stats.correct}問・不正解${stats.wrong}問・未回答${unanswered}問`;
-  els.reviewNavGrid.innerHTML = "";
-  els.reviewQuestions.innerHTML = "";
-
-  flatQuestions.forEach((question, index) => {
-    const record = session.answers[question.id];
-    const status = reviewStatus(question);
-    const correctChoice = displayChoiceForOriginalKey(question, question.answer);
-    const selectedChoice = record ? displayChoiceForOriginalKey(question, record.choice) : null;
-    const article = document.createElement("article");
-    article.className = `reviewQuestion ${status.key}`;
-    article.id = `review-question-${index + 1}`;
-
-    const meta = document.createElement("div");
-    meta.className = "reviewQuestionMeta";
-    meta.innerHTML = `<span>問題 ${index + 1}</span><strong>${status.label}</strong>`;
-    article.appendChild(meta);
-
-    const title = document.createElement("h3");
-    title.textContent = displayQuestionText(question);
-    article.appendChild(title);
-
-    if (question.note) {
-      const note = document.createElement("p");
-      note.className = "reviewNote";
-      note.textContent = question.note;
-      article.appendChild(note);
-    }
-
-    if (question.figure) {
-      const figure = document.createElement("div");
-      figure.className = "questionFigure reviewFigure";
-      figure.innerHTML = question.figure;
-      article.appendChild(figure);
-    }
-
-    const options = document.createElement("div");
-    options.className = "reviewOptions";
-    displayChoices(question).forEach((choice) => {
-      const option = document.createElement("div");
-      option.className = "reviewOption";
-      if (choice.originalKey === question.answer) option.classList.add("correct");
-      if (record?.choice === choice.originalKey) option.classList.add("selected");
-      if (record?.choice === choice.originalKey && choice.originalKey !== question.answer) {
-        option.classList.add("incorrect");
-      }
-      option.innerHTML =
-        `<span class="reviewRadio"></span><span><b>${choice.displayKey}</b> ${choice.text}</span>` +
-        `<span class="reviewCheck">${choice.originalKey === question.answer ? "✓" : ""}</span>`;
-      options.appendChild(option);
-    });
-    article.appendChild(options);
-
-    const feedback = document.createElement("p");
-    feedback.className = `reviewFeedback ${status.key}`;
-    if (!record) {
-      feedback.textContent = `未回答　正解：${correctChoice?.displayKey || ""} ${correctChoice?.text || ""}`;
-    } else if (record.choice === question.answer) {
-      feedback.textContent = `あなたの回答：${selectedChoice?.displayKey || ""} ${selectedChoice?.text || ""}（正解）`;
-    } else {
-      feedback.textContent =
-        `あなたの回答：${selectedChoice?.displayKey || ""} ${selectedChoice?.text || ""}　` +
-        `正解：${correctChoice?.displayKey || ""} ${correctChoice?.text || ""}`;
-    }
-    article.appendChild(feedback);
-    els.reviewQuestions.appendChild(article);
-
-    const jump = document.createElement("button");
-    jump.type = "button";
-    jump.className = `reviewJump ${status.key}`;
-    jump.setAttribute("aria-label", `問題${index + 1}・${status.label}`);
-    jump.innerHTML =
-      `<span>${index + 1}</span>` +
-      `<b>${status.key === "correct" ? "✓" : status.key === "wrong" ? "×" : "—"}</b>`;
-    jump.addEventListener("click", () => {
-      article.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    els.reviewNavGrid.appendChild(jump);
-  });
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
 function updateControls() {
   const done = isFinished();
-  const atFirst = currentIndex === 0;
-  const atLast = currentIndex === flatQuestions.length - 1;
-  els.prev.disabled = atFirst;
-  els.next.textContent = !done && atLast ? "回答を提出" : "次の問題";
-  els.next.disabled = done ? atLast : atLast && answeredCount() === 0;
-  els.reset.textContent = done ? "最初に戻る" : "回答を提出";
-  els.reset.disabled = !done && answeredCount() === 0;
+  els.prev.disabled = flatQuestions.length <= 1;
+  els.next.disabled = flatQuestions.length <= 1;
+  els.random.disabled = done || firstUnansweredIndex() === null;
+  els.random.textContent = done ? "完了" : "未回答からランダム";
 }
 
 function move(offset) {
-  currentIndex = Math.min(Math.max(currentIndex + offset, 0), flatQuestions.length - 1);
+  currentIndex = (currentIndex + offset + flatQuestions.length) % flatQuestions.length;
   renderQuestion();
-}
-
-function finishRound() {
-  if (!session || isFinished() || answeredCount() === 0) return;
-  const unanswered = flatQuestions.length - answeredCount();
-  const message = unanswered > 0
-    ? `未回答が${unanswered}問あります。回答済みの${answeredCount()}問を採点しますか？`
-    : "回答を提出して採点しますか？";
-  if (!confirm(message)) return;
-  session.finishedAt = Date.now();
-  updateWrongBankFromSession();
-  save();
-  renderQuestion();
-  showResult();
 }
 
 function showResult(force = false) {
@@ -684,9 +517,7 @@ function showResult(force = false) {
   const bankCount = wrongBankIndexes().length;
   els.resultTime.textContent = elapsed;
   els.resultAccuracy.textContent = `${stats.accuracy}%`;
-  const unanswered = stats.total - stats.done;
-  const unansweredText = unanswered ? `未回答は${unanswered}問です。` : "";
-  els.resultDetail.textContent = `回答${stats.done}問中，正解${stats.correct}問，不正解${stats.wrong}問。${unansweredText}復習リストには現在${bankCount}問あります。`;
+  els.resultDetail.textContent = `全${stats.total}問中，正解${stats.correct}問，不正解${stats.wrong}問。復習リストには現在${bankCount}問あります。`;
   els.resultDialog.showModal();
   session.resultShown = true;
   save();
@@ -701,17 +532,16 @@ function startRound(size) {
 }
 
 function setSubject(subject) {
-  if (!subjects[subject]) return;
+  if (!subjects[subject] || subject === activeSubject) return;
   activeSubject = subject;
   localStorage.setItem(subjectKey, activeSubject);
   refreshSourceQuestions();
-  session = null;
-  flatQuestions = [];
-  currentIndex = 0;
-  startStep = "round";
+  session = loadSession();
+  flatQuestions = session ? session.order.map((index) => sourceQuestions[index]) : [];
+  currentIndex = session ? firstUnansweredIndex() ?? 0 : 0;
   renderSubjectButtons();
   updateWrongBankButton();
-  showStart();
+  renderQuestion();
 }
 
 function startWrongRound() {
@@ -724,57 +554,34 @@ function startWrongRound() {
   renderQuestion();
 }
 
-function startFixedRound(indexes, index) {
-  session = createSessionFromIndexes(indexes, `fixed-${index + 1}`, false);
-  flatQuestions = session.order.map((sourceIndex) => sourceQuestions[sourceIndex]);
-  currentIndex = 0;
-  save();
-  renderQuestion();
-}
-
 function returnToStart() {
   clearSession();
-  startStep = "round";
   renderQuestion();
 }
 
 els.prev.addEventListener("click", () => move(-1));
-els.next.addEventListener("click", () => {
-  if (!isFinished() && currentIndex === flatQuestions.length - 1) {
-    finishRound();
-    return;
-  }
-  move(1);
+els.next.addEventListener("click", () => move(1));
+els.random.addEventListener("click", () => {
+  const index = randomUnansweredIndex();
+  if (index === null) return;
+  currentIndex = index;
+  renderQuestion();
 });
 
 els.reset.addEventListener("click", () => {
-  if (!isFinished()) {
-    finishRound();
-    return;
-  }
-  if (confirm("開始画面に戻りますか？")) returnToStart();
+  if (!confirm("開始画面に戻りますか？現在のラウンドの回答は削除されます。")) return;
+  returnToStart();
 });
 
-els.closeResult.addEventListener("click", () => {
-  els.resultDialog.close();
-  renderReview();
-});
+els.closeResult.addEventListener("click", () => els.resultDialog.close());
 els.newRound.addEventListener("click", () => {
   els.resultDialog.close();
   returnToStart();
 });
 
 els.start25.addEventListener("click", () => startRound(25));
-els.start50.addEventListener("click", () => startRound(50));
+els.start52.addEventListener("click", () => startRound(uniqueSourceIndexes.length));
 els.startWrong.addEventListener("click", startWrongRound);
-els.reviewStart.addEventListener("click", returnToStart);
-els.reviewNavTop.addEventListener("click", () => {
-  els.reviewNavigator.scrollIntoView({ behavior: "smooth", block: "start" });
-});
-els.backSubject.addEventListener("click", () => {
-  startStep = "subject";
-  showStart();
-});
 els.subjectButtons.forEach((button) => {
   button.addEventListener("click", () => setSubject(button.dataset.subject));
 });
@@ -792,11 +599,7 @@ els.modes.forEach((button) => {
 document.addEventListener("keydown", (event) => {
   if (!session) return;
   if (els.resultDialog.open) return;
-  if (!els.reviewPanel.hidden) return;
-  if (["ArrowRight", "j"].includes(event.key)) {
-    if (!isFinished() && currentIndex === flatQuestions.length - 1) finishRound();
-    else move(1);
-  }
+  if (["ArrowRight", "j"].includes(event.key)) move(1);
   if (["ArrowLeft", "k"].includes(event.key)) move(-1);
   const question = flatQuestions[currentIndex];
   const normalized = event.key.toUpperCase();
@@ -807,7 +610,4 @@ document.addEventListener("keydown", (event) => {
 
 save();
 renderQuestion();
-if (session && isFinished()) {
-  if (session.resultShown) renderReview();
-  else showResult();
-}
+if (session && isFinished()) showResult();
